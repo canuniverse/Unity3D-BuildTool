@@ -12,6 +12,7 @@ public class BuildTool : EditorWindow
 
     public float Radius = 2f;
     public int SpawnCount = 8;
+    public bool RandomizeRotation = false;
     public KeyCode SpawnKey = KeyCode.P;
 
     private bool _isActive;
@@ -20,6 +21,7 @@ public class BuildTool : EditorWindow
     private SerializedProperty _propRadius;
     private SerializedProperty _propSpawnCount;
     private SerializedProperty _spawnKey;
+    private SerializedProperty _randomizeRotation;
 
     private SpawnData[] _spawnDataPoints;
     private GameObject[] _prefabs;
@@ -37,6 +39,7 @@ public class BuildTool : EditorWindow
         _propRadius = _serializedObject.FindProperty("Radius");
         _propSpawnCount = _serializedObject.FindProperty("SpawnCount");
         _spawnKey = _serializedObject.FindProperty("SpawnKey");
+        _randomizeRotation = _serializedObject.FindProperty("RandomizeRotation");
 
         GenerateRandomPoints();
         SceneView.duringSceneGui += DuringSceneGUI;
@@ -76,6 +79,7 @@ public class BuildTool : EditorWindow
         _propRadius.floatValue = _propRadius.floatValue.AtLeast(1);
         EditorGUILayout.PropertyField(_propSpawnCount);
         _propSpawnCount.intValue = _propSpawnCount.intValue.AtLeast(1);
+        EditorGUILayout.PropertyField(_randomizeRotation);
         EditorGUILayout.PropertyField(_spawnKey);
         
         if (GUILayout.Button("Activate Tool"))
@@ -255,10 +259,15 @@ public class BuildTool : EditorWindow
             if (Physics.Raycast(circleRay, out var raycastHit))
             {
                 var randomRotation = Quaternion.Euler(0f, 0f, rndDataPoint.RandAngleDeg);
+                if (!RandomizeRotation)
+                {
+                    randomRotation = rndDataPoint.Prefab.transform.rotation;
+                }
+                
                 var rotation = Quaternion.LookRotation(raycastHit.normal) *
                                (randomRotation * Quaternion.Euler(90f, 0f, 0f));
                 SpawnPoint spawnPoint;
-                if (SpawnCount < 2)
+                if (SpawnCount == 1)
                 {
                     var origin = tangentToWorld.MultiplyPoint3x4(Vector3.zero);
                     spawnPoint = new SpawnPoint(origin, rotation, rndDataPoint);
